@@ -1,0 +1,411 @@
+class BaseConhecimento:
+
+    def __init__(self):
+
+        #Fatos: catálogo com os 5 produtos mapeados
+
+        self.produtos = [
+
+            {
+
+                "nome": "Runner X",
+
+                "categoria": "tenis",
+
+                "uso": "corrida",
+
+                "estilo": "esportivo",
+
+                "conforto": "alto",
+
+                "preco": 199.90,
+
+                "tamanhos": [38, 39, 40, 41, 42]
+
+            },
+
+            {
+
+                "nome": "Classic",
+
+                "categoria": "sapato",
+
+                "uso": "trabalho",
+
+                "estilo": "social",
+
+                "conforto": "medio",
+
+                "preco": 229.90,
+
+                "tamanhos": [39, 40, 41, 42, 43]
+
+            },
+
+            {
+
+                "nome": "Urban",
+
+                "categoria": "tenis",
+
+                "uso": "casual",
+
+                "estilo": "casual",
+
+                "conforto": "alto",
+
+                "preco": 159.90,
+
+                "tamanhos": [37, 38, 39, 40, 41]
+
+            },
+
+            {
+
+                "nome": "Velocity",
+
+                "categoria": "tenis",
+
+                "uso": "esporte",
+
+                "estilo": "esportivo",
+
+                "conforto": "alto",
+
+                "preco": 189.00,
+
+                "tamanhos": [39, 40, 41, 42]
+
+            },
+
+            {
+
+                "nome": "London",
+
+                "categoria": "sapato",
+
+                "uso": "evento_formal",
+
+                "estilo": "social",
+
+                "conforto": "alto",
+
+                "preco": 260.00,
+
+                "tamanhos": [38, 40, 41, 42]
+
+            }
+
+        ]
+
+
+
+
+
+class MotorInferencia:
+
+    def __init__(self, base):
+
+        self.base = base
+
+
+
+    def inferir(self, respostas):
+
+        recomendados = []
+
+
+
+        for item in self.base.produtos:
+
+            #Regra de eliminação: orçamento
+
+            #Se orçamento for informado e preco > orçamento, então eliminar
+
+            if respostas["orcamento"] is not None and item["preco"] > respostas["orcamento"]:
+
+                continue
+
+
+
+            #Regra de eliminação: tamanho
+
+            #Se tamanho for informado e não estiver disponível, então eliminar
+
+            if respostas["tamanho"] is not None and respostas["tamanho"] not in item["tamanhos"]:
+
+                continue
+
+
+
+            pontos = 0
+
+            motivos = []
+
+
+
+            #Regra: corrida
+
+            #Se uso = corrida e prioridade = conforto, então priorizar tênis esportivo com conforto alto
+
+            if respostas["uso"] == "corrida" and item["uso"] == "corrida":
+
+                pontos += 3
+
+                motivos.append("indicado para corrida")
+
+                if respostas["prioridade"] == "conforto" and item["conforto"] == "alto":
+
+                    pontos += 2
+
+                    motivos.append("atende à prioridade de conforto alto")
+
+
+
+            #Regra: esportivo  (exemplo: Velocity)
+
+            #Se uso = esporte e estilo = esportivo, então priorizar calçado esportivo
+
+            if respostas["uso"] == "esporte" and item["estilo"] == "esportivo":
+
+                pontos += 3
+
+                motivos.append("indicado para esportes em geral e trilhas")
+
+                if respostas["prioridade"] == "conforto" and item["conforto"] == "alto":
+
+                    pontos += 2
+
+                    motivos.append("amortecimento e conforto alto")
+
+
+
+            #Regra: trabalho (exemplo: Classic)
+
+            #Se uso = trabalho e estilo = social, então priorizar sapato social
+
+            if respostas["uso"] == "trabalho" and item["estilo"] == "social":
+
+                pontos += 3
+
+                motivos.append("ideal para ambiente de trabalho e escritório")
+
+
+
+            #Regra: evento formal/social (exemplo: London)
+
+            #Se uso = evento formal, então priorizar sapatos sociais mais refinados
+
+            if respostas["uso"] == "evento_formal" and item["estilo"] == "social":
+
+                pontos += 3
+
+                motivos.append("adequado para casamentos, festas e eventos sociais")
+
+
+
+            #Regra: casual (exemplo: Urban)
+
+            #Se uso = casual e estilo = casual, então priorizar tênis casual
+
+            if respostas["uso"] == "casual" and item["estilo"] == "casual":
+
+                pontos += 3
+
+                motivos.append("modelo versátil e leve para o dia a dia")
+
+
+
+            #Regra geral de conforto
+
+            if respostas["prioridade"] == "conforto" and item["conforto"] == "alto" and "atende à prioridade de conforto alto" not in motivos and "amortecimento e conforto alto" not in motivos:
+
+                pontos += 1
+
+                motivos.append("possui nível de conforto alto")
+
+
+
+            #Regra: categoria específica informada
+
+            if respostas["categoria"] != "qualquer" and item["categoria"] == respostas["categoria"]:
+
+                pontos += 1
+
+                motivos.append(f"pertence à categoria {item['categoria']}")
+
+
+
+            #Segurança caso pontue sem motivo específico
+
+            if pontos > 0 and not motivos:
+
+                motivos.append("compatível com os filtros gerais informados")
+
+
+
+            if pontos > 0:
+
+                recomendados.append({
+
+                    "produto": item,
+
+                    "pontos": pontos,
+
+                    "motivos": motivos
+
+                })
+
+
+
+        #Ordena a melhor opção de calçado pela maior pontuação
+
+        recomendados.sort(key=lambda x: x["pontos"], reverse=True)
+
+        return recomendados
+
+
+
+
+
+def executar_sistema():
+
+    base = BaseConhecimento()
+
+    motor = MotorInferencia(base)
+
+
+
+    print("Tênis inteligente - Sistema de recomendação de calçados")
+
+    print("-" * 55)
+
+    print("Informe suas preferências para sugerirmos a melhor opção:\n")
+
+
+
+    #1) Categoria
+
+    print("1) Categoria preferida:")
+
+    print("[1] Tênis  |  [2] Sapato  |  [3] Qualquer categoria")
+
+    op_cat = input("Escolha uma opção [1-3]: ").strip()
+
+    map_cat = {"1": "tenis", "2": "sapato", "3": "qualquer"}
+
+    categoria = map_cat.get(op_cat, "qualquer")
+
+
+
+    #2) Uso
+
+    print("\n2) Finalidade principal de uso:")
+
+    print("[1] Corrida  |  [2] Trabalho  |  [3] Casual  |  [4] Esporte/Aventura  |  [5] Evento formal")
+
+    op_uso = input("Escolha uma opção [1-5]: ").strip()
+
+    map_uso = {"1": "corrida", "2": "trabalho", "3": "casual", "4": "esporte", "5": "evento_formal"}
+
+    uso = map_uso.get(op_uso, "casual")
+
+
+
+    #3) Prioridade
+
+    print("\n3) Qual a sua principal prioridade?")
+
+    print("[1] Conforto  |  [2] Estilo |  [3] Custo benefício")
+
+    op_prio = input("Escolha uma opção [1-3]: ").strip()
+
+    map_prio = {"1": "conforto", "2": "estilo", "3": "preco"}
+
+    prioridade = map_prio.get(op_prio, "conforto")
+
+
+
+    #4) Tamanho
+
+    tamanho = None
+
+    tam_in = input("\n4) Digite sua numeração: ").strip()
+
+    if tam_in.isdigit():
+
+        tamanho = int(tam_in)
+
+
+
+    #5) Orçamento
+
+    orcamento = None
+
+    orc_in = input("5) Limite máximo de orçamento R$: ").strip()
+
+    try:
+
+        if orc_in:
+
+            orcamento = float(orc_in.replace(",", "."))
+
+    except ValueError:
+
+        orcamento = None
+
+
+
+    respostas = {
+
+        "categoria": categoria,
+
+        "uso": uso,
+
+        "prioridade": prioridade,
+
+        "tamanho": tamanho,
+
+        "orcamento": orcamento
+
+    }
+
+
+
+    print("\nConsultando o estoque e processando...")
+
+    resultados = motor.inferir(respostas)
+
+
+
+    if not resultados:
+
+        print("\nNenhum produto atende aos critérios informados.")
+
+    else:
+
+        print(f"\n[+] {len(resultados)} produto(s) recomendado(s):\n")
+
+        for i, res in enumerate(resultados, 1):
+
+            p = res["produto"]
+
+            print(f"{i}. Produto: {p['nome']}")
+
+            print(f"   Categoria: {p['categoria'].capitalize()} | Uso: {p['uso'].capitalize()} | Estilo: {p['estilo'].capitalize()}")
+
+            print(f"   Conforto: {p['conforto'].capitalize()} | Preço: R$ {p['preco']:.2f}")
+
+            print(f"   Tamanhos disponíveis: {p['tamanhos']}")
+
+            print(f"   Justificativa: {', '.join(res['motivos'])}")
+
+            print("-" * 50)
+
+
+
+
+
+if __name__ == "__main__":
+
+    executar_sistema()
